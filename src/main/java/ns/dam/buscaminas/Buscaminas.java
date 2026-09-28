@@ -10,39 +10,41 @@ import java.util.Random;
 
 public class Buscaminas extends JFrame implements ActionListener {
 
-    // Constantes del tablero
+    // Configuración de la cuadrícula
     private static final int FILAS = 10;
     private static final int COLUMNAS = 10;
     private static final int TOTAL_MINAS = 10;
 
-    // paleta estilos
-    private static final Color COLOR_FONDO_VENTANA = new Color(225, 232, 225); // Gris suave verdoso
-    private static final Color COLOR_PANEL = new Color(205, 215, 205);        // Gris verde neutro claro
-    private static final Color COLOR_BOTON_OCULTO = new Color(188, 210, 188);  // Verde claro suave
-    private static final Color COLOR_BOTON_REVELADO = new Color(215, 222, 215);// Gris claro plano
-    private static final Color COLOR_TEXTO_TITULO = new Color(40, 50, 40);     // Gris verdoso oscuro
-    private static final Color COLOR_ACENTO_VERDE = new Color(85, 140, 90);    // Verde medio para resaltar
+    // Paleta de colores 
+    private static final Color COLOR_FONDO_VENTANA = new Color(24, 20, 32);
+    private static final Color COLOR_PANEL = new Color(38, 32, 50);
+    private static final Color COLOR_BOTON_TAPADO = new Color(58, 48, 76);
+    private static final Color COLOR_BOTON_DESTAPADO = new Color(30, 25, 40);
+    private static final Color COLOR_TEXTO_PRINCIPAL = new Color(220, 210, 235);
+    private static final Color COLOR_ACENTO_NEON = new Color(50, 205, 120);
 
-    private static final String FUENTE_RETRO = "Courier New";
+    // Tipografías
+    private static final String FUENTE_TEXTO = "Consolas";
     private static final String FUENTE_EMOJI = "Segoe UI Emoji";
 
+    // Iconos
     private static final String DIBUJO_MINA = "💣";
     private static final String DIBUJO_EXPLOSION = "💥";
     private static final String DIBUJO_VICTORIA = "🏆";
 
-    // Componentes interfaz
+    // Componentes de la interfaz
     private JLabel lblMinas;
     private JLabel lblResultado;
     private JButton btnNuevaPartida;
     private JButton[][] botonesTablero;
     private JPanel panelExplosionGigante;
 
-    // Estructuras de datos
+    // Control de datos del juego
     private boolean[][] minas;
     private boolean[][] descubiertas;
     private int[][] minasAlrededor;
 
-    // Control de estado
+    // Variables de estado
     private int casillasPorDescubrir;
     private boolean juegoTerminado;
 
@@ -61,21 +63,21 @@ public class Buscaminas extends JFrame implements ActionListener {
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(8, 8, 8, 8);
 
-        // Panel Superior
+        // Panel de superior
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 1.0;
         gbc.weighty = 0.0;
         getContentPane().add(crearPanelSuperior(), gbc);
 
-        // Panel Central
+        // Panel central
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.weightx = 1.0;
         gbc.weighty = 1.0;
         getContentPane().add(crearContenedorCentral(), gbc);
 
-        // Panel Inferior
+        // Panel de abajo con el botón de reiniciar
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 1.0;
@@ -92,23 +94,22 @@ public class Buscaminas extends JFrame implements ActionListener {
     private JPanel crearPanelSuperior() {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBackground(COLOR_PANEL);
-
         panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createBevelBorder(BevelBorder.LOWERED),
+                BorderFactory.createLineBorder(COLOR_ACENTO_NEON, 1),
                 BorderFactory.createEmptyBorder(8, 10, 8, 10)
         ));
 
         JLabel lblTitulo = new JLabel("BUSCAMINAS", SwingConstants.CENTER);
-        lblTitulo.setFont(new Font(FUENTE_RETRO, Font.BOLD, 22));
-        lblTitulo.setForeground(COLOR_TEXTO_TITULO);
+        lblTitulo.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 20));
+        lblTitulo.setForeground(COLOR_TEXTO_PRINCIPAL);
 
         lblMinas = new JLabel(DIBUJO_MINA + " MINAS: " + TOTAL_MINAS, SwingConstants.CENTER);
-        lblMinas.setFont(new Font(FUENTE_EMOJI, Font.BOLD, 14));
-        lblMinas.setForeground(COLOR_TEXTO_TITULO);
+        lblMinas.setFont(new Font(FUENTE_EMOJI, Font.BOLD, 13));
+        lblMinas.setForeground(COLOR_TEXTO_PRINCIPAL);
 
-        lblResultado = new JLabel("READY!", SwingConstants.CENTER);
-        lblResultado.setFont(new Font(FUENTE_EMOJI, Font.BOLD, 15));
-        lblResultado.setForeground(COLOR_TEXTO_TITULO);
+        lblResultado = new JLabel("STATUS: OK", SwingConstants.CENTER);
+        lblResultado.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 14));
+        lblResultado.setForeground(COLOR_ACENTO_NEON);
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -134,22 +135,22 @@ public class Buscaminas extends JFrame implements ActionListener {
         JPanel contenedor = new JPanel();
         contenedor.setLayout(new OverlayLayout(contenedor));
 
-        // Panel explosión gigante
+        // Pantalla roja al perder
         panelExplosionGigante = new JPanel(new GridBagLayout());
-        panelExplosionGigante.setBackground(new Color(220, 53, 69, 200));
+        panelExplosionGigante.setBackground(new Color(180, 20, 50, 210));
         panelExplosionGigante.setOpaque(true);
         panelExplosionGigante.setVisible(false);
 
         JLabel lblExplosionGigante = new JLabel(DIBUJO_EXPLOSION);
-        lblExplosionGigante.setFont(new Font(FUENTE_EMOJI, Font.PLAIN, 130));
+        lblExplosionGigante.setFont(new Font(FUENTE_EMOJI, Font.PLAIN, 120));
         panelExplosionGigante.add(lblExplosionGigante);
 
         panelExplosionGigante.addMouseListener(new MouseAdapter() {});
 
-        // Panel Tablero
+        // Panel con la cuadrícula de botones
         JPanel panelTablero = new JPanel(new GridBagLayout());
         panelTablero.setBackground(COLOR_PANEL);
-        panelTablero.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+        panelTablero.setBorder(BorderFactory.createLineBorder(COLOR_BOTON_TAPADO, 2));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(1, 1, 1, 1);
@@ -158,7 +159,7 @@ public class Buscaminas extends JFrame implements ActionListener {
             for (int c = 0; c < botonesTablero[f].length; c++) {
                 JButton btn = new JButton();
                 btn.setPreferredSize(new Dimension(42, 42));
-                btn.setFont(new Font(FUENTE_RETRO, Font.BOLD, 18));
+                btn.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 17));
                 btn.setMargin(new Insets(0, 0, 0, 0));
                 btn.setFocusable(false);
                 btn.setFocusPainted(false);
@@ -183,16 +184,16 @@ public class Buscaminas extends JFrame implements ActionListener {
         panel.setBackground(COLOR_PANEL);
         panel.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
 
-        btnNuevaPartida = new JButton("RESET");
-        btnNuevaPartida.setFont(new Font(FUENTE_RETRO, Font.BOLD, 14));
-        btnNuevaPartida.setBackground(COLOR_BOTON_OCULTO);
-        btnNuevaPartida.setForeground(COLOR_TEXTO_TITULO);
+        btnNuevaPartida = new JButton(" RESTART ");
+        btnNuevaPartida.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 13));
+        btnNuevaPartida.setBackground(COLOR_BOTON_TAPADO);
+        btnNuevaPartida.setForeground(COLOR_TEXTO_PRINCIPAL);
         btnNuevaPartida.setFocusable(false);
         btnNuevaPartida.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         btnNuevaPartida.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createBevelBorder(BevelBorder.RAISED),
-                BorderFactory.createEmptyBorder(6, 16, 6, 16)
+                BorderFactory.createLineBorder(COLOR_ACENTO_NEON, 1),
+                BorderFactory.createEmptyBorder(6, 14, 6, 14)
         ));
         btnNuevaPartida.addActionListener(e -> iniciarNuevaPartida());
 
@@ -204,19 +205,19 @@ public class Buscaminas extends JFrame implements ActionListener {
         return panel;
     }
 
-    //logica
-
+    // Resetear tablero y preparar partida nueva
     private void iniciarNuevaPartida() {
         juegoTerminado = false;
         casillasPorDescubrir = (FILAS * COLUMNAS) - TOTAL_MINAS;
 
-        lblResultado.setFont(new Font(FUENTE_RETRO, Font.BOLD, 15));
-        lblResultado.setText("READY!");
-        lblResultado.setForeground(COLOR_TEXTO_TITULO);
+        lblResultado.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 14));
+        lblResultado.setText("STATUS: OK");
+        lblResultado.setForeground(COLOR_ACENTO_NEON);
         lblMinas.setText(" MINAS: " + TOTAL_MINAS);
 
         panelExplosionGigante.setVisible(false);
 
+        // Limpiar botones y matrices
         for (int f = 0; f < minas.length; f++) {
             for (int c = 0; c < minas[f].length; c++) {
                 minas[f][c] = false;
@@ -225,9 +226,9 @@ public class Buscaminas extends JFrame implements ActionListener {
 
                 JButton btn = botonesTablero[f][c];
                 btn.setText("");
-                btn.setFont(new Font(FUENTE_RETRO, Font.BOLD, 18));
+                btn.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 17));
                 btn.setEnabled(true);
-                btn.setBackground(COLOR_BOTON_OCULTO);
+                btn.setBackground(COLOR_BOTON_TAPADO);
                 btn.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
             }
         }
@@ -279,7 +280,6 @@ public class Buscaminas extends JFrame implements ActionListener {
         return f >= 0 && f < FILAS && c >= 0 && c < COLUMNAS;
     }
 
-    // EVENTOS
     @Override
     public void actionPerformed(ActionEvent e) {
         if (juegoTerminado) return;
@@ -306,23 +306,25 @@ public class Buscaminas extends JFrame implements ActionListener {
         btn.setEnabled(false);
         btn.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
 
+        // Toca mina
         if (minas[f][c]) {
-            btn.setFont(new Font(FUENTE_EMOJI, Font.BOLD, 16));
+            btn.setFont(new Font(FUENTE_EMOJI, Font.BOLD, 15));
             btn.setText(DIBUJO_EXPLOSION);
-            btn.setBackground(new Color(220, 80, 80));
+            btn.setBackground(new Color(180, 40, 60));
             procesarDerrota();
             return;
         }
 
         casillasPorDescubrir--;
-        btn.setBackground(COLOR_BOTON_REVELADO);
+        btn.setBackground(COLOR_BOTON_DESTAPADO);
 
         int numMinas = minasAlrededor[f][c];
         if (numMinas > 0) {
-            btn.setFont(new Font(FUENTE_RETRO, Font.BOLD, 18));
+            btn.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 17));
             btn.setText(String.valueOf(numMinas));
             asignarColorNumeroRetro(btn, numMinas);
         } else {
+            // Abrir las casillas de alrededor si está vacía
             for (int df = -1; df <= 1; df++) {
                 for (int dc = -1; dc <= 1; dc++) {
                     if (df != 0 || dc != 0) {
@@ -338,21 +340,22 @@ public class Buscaminas extends JFrame implements ActionListener {
     }
 
     private void asignarColorNumeroRetro(JButton btn, int numMinas) {
+        // Colores neón
         switch (numMinas) {
-            case 1 -> btn.setForeground(new Color(25, 100, 150));   // Azul verdoso
-            case 2 -> btn.setForeground(COLOR_ACENTO_VERDE);        // Verde bosque
-            case 3 -> btn.setForeground(new Color(180, 50, 50));    // Rojo apagado
-            case 4 -> btn.setForeground(new Color(60, 40, 100));    // Púrpura oscuro
-            case 5 -> btn.setForeground(new Color(120, 60, 20));    // Marrón
-            default -> btn.setForeground(new Color(40, 100, 90));   // Cían oscuro
+            case 1 -> btn.setForeground(new Color(100, 180, 255)); // Azul claro
+            case 2 -> btn.setForeground(COLOR_ACENTO_NEON);        // Verde neón
+            case 3 -> btn.setForeground(new Color(255, 110, 110)); // Rojo suave
+            case 4 -> btn.setForeground(new Color(180, 130, 255)); // Morado
+            case 5 -> btn.setForeground(new Color(255, 180, 80));  // Naranja
+            default -> btn.setForeground(COLOR_TEXTO_PRINCIPAL);
         }
     }
 
     private void procesarDerrota() {
         juegoTerminado = true;
-        lblResultado.setFont(new Font(FUENTE_EMOJI, Font.BOLD, 15));
-        lblResultado.setText(DIBUJO_EXPLOSION + " GAME OVER " + DIBUJO_EXPLOSION);
-        lblResultado.setForeground(new Color(180, 40, 40));
+        lblResultado.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 13));
+        lblResultado.setText("GAME OVER");
+        lblResultado.setForeground(new Color(240, 80, 80));
         revelarTodasLasMinas();
 
         panelExplosionGigante.setVisible(true);
@@ -360,21 +363,19 @@ public class Buscaminas extends JFrame implements ActionListener {
 
     private void procesarVictoria() {
         juegoTerminado = true;
-        lblResultado.setFont(new Font(FUENTE_EMOJI, Font.BOLD, 15));
-        lblResultado.setText(DIBUJO_VICTORIA + " WINNER! " + DIBUJO_VICTORIA);
-        lblResultado.setForeground(COLOR_ACENTO_VERDE);
+        lblResultado.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 13));
+        lblResultado.setText("MISSION ACCOMPLISHED");
+        lblResultado.setForeground(COLOR_ACENTO_NEON);
         revelarTodasLasMinas();
     }
 
     private void revelarTodasLasMinas() {
         for (int f = 0; f < minas.length; f++) {
             for (int c = 0; c < minas[f].length; c++) {
-                if (minas[f][c]) {
-                    if (!descubiertas[f][c]) {
-                        botonesTablero[f][c].setFont(new Font(FUENTE_EMOJI, Font.BOLD, 16));
-                        botonesTablero[f][c].setText(DIBUJO_MINA);
-                        botonesTablero[f][c].setBackground(new Color(210, 160, 160));
-                    }
+                if (minas[f][c] && !descubiertas[f][c]) {
+                    botonesTablero[f][c].setFont(new Font(FUENTE_EMOJI, Font.BOLD, 15));
+                    botonesTablero[f][c].setText(DIBUJO_MINA);
+                    botonesTablero[f][c].setBackground(new Color(90, 40, 50));
                 }
             }
         }
