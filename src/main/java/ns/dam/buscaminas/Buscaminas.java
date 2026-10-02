@@ -6,16 +6,14 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
-import java.util.Random;
 
 public class Buscaminas extends JFrame implements ActionListener {
+   //que se pueda cambiar en ventanaajustes
+    private int filas = 10;
+    private int columnas = 10;
+    private int totalMinas = 10;
 
-    // Configuración de la cuadrícula
-    private static final int FILAS = 10;
-    private static final int COLUMNAS = 10;
-    private static final int TOTAL_MINAS = 10;
-
-    // Paleta de colores 
+    // colores
     private static final Color COLOR_FONDO_VENTANA = new Color(24, 20, 32);
     private static final Color COLOR_PANEL = new Color(38, 32, 50);
     private static final Color COLOR_BOTON_TAPADO = new Color(58, 48, 76);
@@ -23,65 +21,53 @@ public class Buscaminas extends JFrame implements ActionListener {
     private static final Color COLOR_TEXTO_PRINCIPAL = new Color(220, 210, 235);
     private static final Color COLOR_ACENTO_NEON = new Color(50, 205, 120);
 
-    // Tipografías
+    // tipografias
     private static final String FUENTE_TEXTO = "Consolas";
     private static final String FUENTE_EMOJI = "Segoe UI Emoji";
 
     // Iconos
     private static final String DIBUJO_MINA = "💣";
     private static final String DIBUJO_EXPLOSION = "💥";
-    private static final String DIBUJO_VICTORIA = "🏆";
 
-    // Componentes de la interfaz
+    // Componentes visuales
     private JLabel lblMinas;
     private JLabel lblResultado;
     private JButton btnNuevaPartida;
+    private JButton btnAjustes;
     private JButton[][] botonesTablero;
     private JPanel panelExplosionGigante;
+    private JPanel panelTablero;
+    private JPanel contenedorCentral;
 
-    // Control de datos del juego
-    private boolean[][] minas;
-    private boolean[][] descubiertas;
-    private int[][] minasAlrededor;
-
-    // Variables de estado
-    private int casillasPorDescubrir;
-    private boolean juegoTerminado;
+    // logica
+    private Tablero juego;
 
     public Buscaminas() {
+        juego = new Tablero(filas, columnas, totalMinas);
+
         setTitle("Buscaminas");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new GridBagLayout());
         getContentPane().setBackground(COLOR_FONDO_VENTANA);
 
-        botonesTablero = new JButton[FILAS][COLUMNAS];
-        minas = new boolean[FILAS][COLUMNAS];
-        descubiertas = new boolean[FILAS][COLUMNAS];
-        minasAlrededor = new int[FILAS][COLUMNAS];
-
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(8, 8, 8, 8);
 
-        // Panel de superior
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 1.0;
-        gbc.weighty = 0.0;
+        // Panel superior
+        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.weightx = 1.0; gbc.weighty = 0.0;
         getContentPane().add(crearPanelSuperior(), gbc);
 
         // Panel central
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.weightx = 1.0;
-        gbc.weighty = 1.0;
-        getContentPane().add(crearContenedorCentral(), gbc);
+        gbc.gridx = 0; gbc.gridy = 1;
+        gbc.weightx = 1.0; gbc.weighty = 1.0;
+        contenedorCentral = crearContenedorCentral();
+        getContentPane().add(contenedorCentral, gbc);
 
-        // Panel de abajo con el botón de reiniciar
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.weightx = 1.0;
-        gbc.weighty = 0.0;
+        // Panel inferior
+        gbc.gridx = 0; gbc.gridy = 2;
+        gbc.weightx = 1.0; gbc.weighty = 0.0;
         getContentPane().add(crearPanelInferior(), gbc);
 
         iniciarNuevaPartida();
@@ -103,7 +89,7 @@ public class Buscaminas extends JFrame implements ActionListener {
         lblTitulo.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 20));
         lblTitulo.setForeground(COLOR_TEXTO_PRINCIPAL);
 
-        lblMinas = new JLabel(DIBUJO_MINA + " MINAS: " + TOTAL_MINAS, SwingConstants.CENTER);
+        lblMinas = new JLabel(DIBUJO_MINA + " MINAS: " + totalMinas, SwingConstants.CENTER);
         lblMinas.setFont(new Font(FUENTE_EMOJI, Font.BOLD, 13));
         lblMinas.setForeground(COLOR_TEXTO_PRINCIPAL);
 
@@ -116,17 +102,9 @@ public class Buscaminas extends JFrame implements ActionListener {
         gbc.weightx = 1.0;
         gbc.insets = new Insets(3, 4, 3, 4);
 
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        panel.add(lblTitulo, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        panel.add(lblMinas, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        panel.add(lblResultado, gbc);
+        gbc.gridx = 0; gbc.gridy = 0; panel.add(lblTitulo, gbc);
+        gbc.gridx = 0; gbc.gridy = 1; panel.add(lblMinas, gbc);
+        gbc.gridx = 0; gbc.gridy = 2; panel.add(lblResultado, gbc);
 
         return panel;
     }
@@ -135,7 +113,6 @@ public class Buscaminas extends JFrame implements ActionListener {
         JPanel contenedor = new JPanel();
         contenedor.setLayout(new OverlayLayout(contenedor));
 
-        // Pantalla roja al perder
         panelExplosionGigante = new JPanel(new GridBagLayout());
         panelExplosionGigante.setBackground(new Color(180, 20, 50, 210));
         panelExplosionGigante.setOpaque(true);
@@ -144,19 +121,27 @@ public class Buscaminas extends JFrame implements ActionListener {
         JLabel lblExplosionGigante = new JLabel(DIBUJO_EXPLOSION);
         lblExplosionGigante.setFont(new Font(FUENTE_EMOJI, Font.PLAIN, 120));
         panelExplosionGigante.add(lblExplosionGigante);
-
         panelExplosionGigante.addMouseListener(new MouseAdapter() {});
 
-        // Panel con la cuadrícula de botones
-        JPanel panelTablero = new JPanel(new GridBagLayout());
-        panelTablero.setBackground(COLOR_PANEL);
-        panelTablero.setBorder(BorderFactory.createLineBorder(COLOR_BOTON_TAPADO, 2));
+        panelTablero = construirPanelTablero();
 
+        contenedor.add(panelExplosionGigante);
+        contenedor.add(panelTablero);
+
+        return contenedor;
+    }
+
+    private JPanel construirPanelTablero() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(COLOR_PANEL);
+        panel.setBorder(BorderFactory.createLineBorder(COLOR_BOTON_TAPADO, 2));
+
+        botonesTablero = new JButton[filas][columnas];
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(1, 1, 1, 1);
 
-        for (int f = 0; f < botonesTablero.length; f++) {
-            for (int c = 0; c < botonesTablero[f].length; c++) {
+        for (int f = 0; f < filas; f++) {
+            for (int c = 0; c < columnas; c++) {
                 JButton btn = new JButton();
                 btn.setPreferredSize(new Dimension(42, 42));
                 btn.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 17));
@@ -167,20 +152,16 @@ public class Buscaminas extends JFrame implements ActionListener {
 
                 gbc.gridx = c;
                 gbc.gridy = f;
-                panelTablero.add(btn, gbc);
+                panel.add(btn, gbc);
 
                 botonesTablero[f][c] = btn;
             }
         }
-
-        contenedor.add(panelExplosionGigante);
-        contenedor.add(panelTablero);
-
-        return contenedor;
+        return panel;
     }
 
     private JPanel crearPanelInferior() {
-        JPanel panel = new JPanel(new GridBagLayout());
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         panel.setBackground(COLOR_PANEL);
         panel.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
 
@@ -190,40 +171,45 @@ public class Buscaminas extends JFrame implements ActionListener {
         btnNuevaPartida.setForeground(COLOR_TEXTO_PRINCIPAL);
         btnNuevaPartida.setFocusable(false);
         btnNuevaPartida.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
         btnNuevaPartida.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(COLOR_ACENTO_NEON, 1),
                 BorderFactory.createEmptyBorder(6, 14, 6, 14)
         ));
         btnNuevaPartida.addActionListener(e -> iniciarNuevaPartida());
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        panel.add(btnNuevaPartida, gbc);
+        btnAjustes = new JButton(" AJUSTES ");
+        btnAjustes.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 13));
+        btnAjustes.setBackground(COLOR_BOTON_TAPADO);
+        btnAjustes.setForeground(COLOR_TEXTO_PRINCIPAL);
+        btnAjustes.setFocusable(false);
+        btnAjustes.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnAjustes.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(COLOR_ACENTO_NEON, 1),
+                BorderFactory.createEmptyBorder(6, 14, 6, 14)
+        ));
+        btnAjustes.addActionListener(e -> {
+            VentanaAjustes vAjustes = new VentanaAjustes(this);
+            vAjustes.setVisible(true);
+        });
+
+        panel.add(btnNuevaPartida);
+        panel.add(btnAjustes);
 
         return panel;
     }
 
-    // Resetear tablero y preparar partida nueva
     private void iniciarNuevaPartida() {
-        juegoTerminado = false;
-        casillasPorDescubrir = (FILAS * COLUMNAS) - TOTAL_MINAS;
+        juego.iniciarPartida();
 
         lblResultado.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 14));
         lblResultado.setText("STATUS: OK");
         lblResultado.setForeground(COLOR_ACENTO_NEON);
-        lblMinas.setText(" MINAS: " + TOTAL_MINAS);
+        lblMinas.setText(DIBUJO_MINA + " MINAS: " + totalMinas);
 
         panelExplosionGigante.setVisible(false);
 
-        // Limpiar botones y matrices
-        for (int f = 0; f < minas.length; f++) {
-            for (int c = 0; c < minas[f].length; c++) {
-                minas[f][c] = false;
-                descubiertas[f][c] = false;
-                minasAlrededor[f][c] = 0;
-
+        for (int f = 0; f < filas; f++) {
+            for (int c = 0; c < columnas; c++) {
                 JButton btn = botonesTablero[f][c];
                 btn.setText("");
                 btn.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 17));
@@ -232,147 +218,83 @@ public class Buscaminas extends JFrame implements ActionListener {
                 btn.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
             }
         }
-
-        colocarMinasAleatorias();
-        calcularMinasAdyacentes();
-    }
-
-    private void colocarMinasAleatorias() {
-        Random rand = new Random();
-        int minasColocadas = 0;
-
-        while (minasColocadas < TOTAL_MINAS) {
-            int f = rand.nextInt(FILAS);
-            int c = rand.nextInt(COLUMNAS);
-
-            if (!minas[f][c]) {
-                minas[f][c] = true;
-                minasColocadas++;
-            }
-        }
-    }
-
-    private void calcularMinasAdyacentes() {
-        for (int f = 0; f < minas.length; f++) {
-            for (int c = 0; c < minas[f].length; c++) {
-                if (!minas[f][c]) {
-                    minasAlrededor[f][c] = contarMinasVecinas(f, c);
-                }
-            }
-        }
-    }
-
-    private int contarMinasVecinas(int fila, int col) {
-        int contador = 0;
-        for (int df = -1; df <= 1; df++) {
-            for (int dc = -1; dc <= 1; dc++) {
-                int nf = fila + df;
-                int nc = col + dc;
-                if (esCasillaValida(nf, nc) && minas[nf][nc]) {
-                    contador++;
-                }
-            }
-        }
-        return contador;
-    }
-
-    private boolean esCasillaValida(int f, int c) {
-        return f >= 0 && f < FILAS && c >= 0 && c < COLUMNAS;
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (juegoTerminado) return;
+        if (juego.isJuegoTerminado()) return;
 
         JButton botonPulsado = (JButton) e.getSource();
 
-        for (int f = 0; f < botonesTablero.length; f++) {
-            for (int c = 0; c < botonesTablero[f].length; c++) {
+        for (int f = 0; f < filas; f++) {
+            for (int c = 0; c < columnas; c++) {
                 if (botonesTablero[f][c] == botonPulsado) {
-                    revelarCasilla(f, c);
+                    juego.revelarCasilla(f, c);
+                    actualizarInterfaz();
                     return;
                 }
             }
         }
     }
 
-    private void revelarCasilla(int f, int c) {
-        if (!esCasillaValida(f, c) || descubiertas[f][c] || juegoTerminado) {
-            return;
-        }
+    private void actualizarInterfaz() {
+        for (int f = 0; f < filas; f++) {
+            for (int c = 0; c < columnas; c++) {
+                JButton btn = botonesTablero[f][c];
 
-        descubiertas[f][c] = true;
-        JButton btn = botonesTablero[f][c];
-        btn.setEnabled(false);
-        btn.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+                if (juego.esDescubierta(f, c)) {
+                    btn.setEnabled(false);
+                    btn.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
 
-        // Toca mina
-        if (minas[f][c]) {
-            btn.setFont(new Font(FUENTE_EMOJI, Font.BOLD, 15));
-            btn.setText(DIBUJO_EXPLOSION);
-            btn.setBackground(new Color(180, 40, 60));
-            procesarDerrota();
-            return;
-        }
-
-        casillasPorDescubrir--;
-        btn.setBackground(COLOR_BOTON_DESTAPADO);
-
-        int numMinas = minasAlrededor[f][c];
-        if (numMinas > 0) {
-            btn.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 17));
-            btn.setText(String.valueOf(numMinas));
-            asignarColorNumeroRetro(btn, numMinas);
-        } else {
-            // Abrir las casillas de alrededor si está vacía
-            for (int df = -1; df <= 1; df++) {
-                for (int dc = -1; dc <= 1; dc++) {
-                    if (df != 0 || dc != 0) {
-                        revelarCasilla(f + df, c + dc);
+                    if (juego.esMina(f, c)) {
+                        btn.setFont(new Font(FUENTE_EMOJI, Font.BOLD, 15));
+                        btn.setText(DIBUJO_EXPLOSION);
+                        btn.setBackground(new Color(180, 40, 60));
+                    } else {
+                        btn.setBackground(COLOR_BOTON_DESTAPADO);
+                        int numMinas = juego.getMinasAlrededor(f, c);
+                        if (numMinas > 0) {
+                            btn.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 17));
+                            btn.setText(String.valueOf(numMinas));
+                            asignarColorNumeroRetro(btn, numMinas);
+                        } else {
+                            btn.setText("");
+                        }
                     }
                 }
             }
         }
 
-        if (casillasPorDescubrir == 0) {
-            procesarVictoria();
+        if (juego.isJuegoTerminado()) {
+            revelarTodasLasMinas();
+            if (juego.isVictoria()) {
+                lblResultado.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 13));
+                lblResultado.setText("MISSION ACCOMPLISHED");
+                lblResultado.setForeground(COLOR_ACENTO_NEON);
+            } else {
+                lblResultado.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 13));
+                lblResultado.setText("GAME OVER");
+                lblResultado.setForeground(new Color(240, 80, 80));
+                panelExplosionGigante.setVisible(true);
+            }
         }
     }
 
     private void asignarColorNumeroRetro(JButton btn, int numMinas) {
-        // Colores neón
         switch (numMinas) {
-            case 1 -> btn.setForeground(new Color(100, 180, 255)); // Azul claro
-            case 2 -> btn.setForeground(COLOR_ACENTO_NEON);        // Verde neón
-            case 3 -> btn.setForeground(new Color(255, 110, 110)); // Rojo suave
-            case 4 -> btn.setForeground(new Color(180, 130, 255)); // Morado
-            case 5 -> btn.setForeground(new Color(255, 180, 80));  // Naranja
+            case 1 -> btn.setForeground(new Color(100, 180, 255));
+            case 2 -> btn.setForeground(COLOR_ACENTO_NEON);
+            case 3 -> btn.setForeground(new Color(255, 110, 110));
+            case 4 -> btn.setForeground(new Color(180, 130, 255));
+            case 5 -> btn.setForeground(new Color(255, 180, 80));
             default -> btn.setForeground(COLOR_TEXTO_PRINCIPAL);
         }
     }
 
-    private void procesarDerrota() {
-        juegoTerminado = true;
-        lblResultado.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 13));
-        lblResultado.setText("GAME OVER");
-        lblResultado.setForeground(new Color(240, 80, 80));
-        revelarTodasLasMinas();
-
-        panelExplosionGigante.setVisible(true);
-    }
-
-    private void procesarVictoria() {
-        juegoTerminado = true;
-        lblResultado.setFont(new Font(FUENTE_TEXTO, Font.BOLD, 13));
-        lblResultado.setText("MISSION ACCOMPLISHED");
-        lblResultado.setForeground(COLOR_ACENTO_NEON);
-        revelarTodasLasMinas();
-    }
-
     private void revelarTodasLasMinas() {
-        for (int f = 0; f < minas.length; f++) {
-            for (int c = 0; c < minas[f].length; c++) {
-                if (minas[f][c] && !descubiertas[f][c]) {
+        for (int f = 0; f < filas; f++) {
+            for (int c = 0; c < columnas; c++) {
+                if (juego.esMina(f, c) && !juego.esDescubierta(f, c)) {
                     botonesTablero[f][c].setFont(new Font(FUENTE_EMOJI, Font.BOLD, 15));
                     botonesTablero[f][c].setText(DIBUJO_MINA);
                     botonesTablero[f][c].setBackground(new Color(90, 40, 50));
@@ -381,9 +303,33 @@ public class Buscaminas extends JFrame implements ActionListener {
         }
     }
 
+    // metodos ventana ajustes
+
+    public int getFilasActuales() {
+        return filas;
+    }
+
+    public int getColumnasActuales() {
+        return columnas;
+    }
+
+ public void configurarYReiniciar(int nuevasFilas, int nuevasColumnas, int nuevasMinas) {
+    this.filas = nuevasFilas;
+    this.columnas = nuevasColumnas;
+    this.totalMinas = nuevasMinas;
+
+    this.juego = new Tablero(filas, columnas, totalMinas);
+
+    contenedorCentral.remove(panelTablero);
+    panelTablero = construirPanelTablero();
+    contenedorCentral.add(panelTablero);
+
+    iniciarNuevaPartida();
+
+    pack();
+    setLocationRelativeTo(null);
+}
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            new Buscaminas().setVisible(true);
-        });
+        SwingUtilities.invokeLater(() -> new Buscaminas().setVisible(true));
     }
 }
